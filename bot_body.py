@@ -65,17 +65,43 @@ def data_writer(client_info, output_file):
     workbook.close()
 
 
-#Проверка номера и вывод инфы
+#инициализация проверки номера, поиска по номеру(если существует) и вывод инфы
 def phon_number_search(message):
     phon = message.text
     phon = correct_number(phon)
     if phon == 1:
         bot.send_message(message.chat.id, 'Номер не существует. Попробуйте еще раз.')
-        client_search(message)
+        client_search_by_number(message)
 
     else:
         clients_info = '\n'.join(data_reader(phon, file))
         bot.send_message(message.chat.id, clients_info)
+
+
+#инициализация поиска по адресу и вывод
+def address_search(message):
+    address = message.text
+    clients_info = '\n'.join(data_reader_address(address, file))
+    bot.send_message(message.chat.id, clients_info)
+
+
+
+#поиск инфы о клиенте по адресу(введенному вручную)
+def data_reader_address(address, output_file):
+    workbook = openpyxl.load_workbook(output_file)
+    ws = workbook['data']
+    max_row = 'C' + str(ws.max_row)
+    client_list = []
+    for row in ws['A2':max_row]:
+        if address in row[1].value:
+            client_list.append(f'{row[0].value}\n{row[1].value}\n{row[2].value}')
+    workbook.close()
+    if len(client_list) == 0:
+        return ['Клиент чист']
+    elif len(client_list) == 1:
+        return client_list
+    else:
+        return [f'{i+1}: {client}' for i, client in enumerate(client_list)]
 
 
 #поиск инфы о клиенте по номеру.
@@ -86,7 +112,7 @@ def data_reader(client_number, output_file):
     client_list = []
     for row in ws['A2':max_row]:
         if client_number == row[0].value:
-            client_list.append(f'{row[2].value}\n{row[1].value}')
+            client_list.append(f'{row[0].value}\n{row[1].value}\n{row[2].value}')
     workbook.close()
     if len(client_list) == 0:
         return ['Клиент чист']
@@ -102,11 +128,17 @@ def start_add(message):
     start_list(message)
 
 
-#поиск по номеру
+#поиск по параметру. вызывает пачку кнопок. зачем? загадка...
 @bot.message_handler(commands=['search_number'])
-def client_search(message):
+def client_search_by_number(message):
     mg = bot.send_message(message.chat.id, 'Введите номер телефона')
     bot.register_next_step_handler(mg, phon_number_search)
+
+
+@bot.message_handler(commands=['search_address'])
+def client_search_by_address(message):
+    mg = bot.send_message(message.chat.id, 'Введите адрес(без номера квартиры)')
+    bot.register_next_step_handler(mg, address_search)
 
 
 bot.polling(none_stop=True)
