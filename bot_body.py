@@ -2,7 +2,7 @@ import openpyxl
 import telebot
 
 file = 'black_list.xlsx'
-token = '5344175403:AAE2sQOhTKvZLhxji_W_LwHwr-P0Jhv4gfU'
+token = 
 bot = telebot.TeleBot(token)
 
 
